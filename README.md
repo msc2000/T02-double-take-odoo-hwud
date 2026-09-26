@@ -147,9 +147,9 @@ T02-double-take-odoo-hwud/
 - [x] Automated business recommendation
 - [x] Odoo list and form views
 - [x] Synthetic business data testing
-- [ ] Recommended reorder quantity
-- [ ] Create Purchase Order from recommendation
-- [ ] Business Health dashboard
+- [x] Recommended reorder quantity
+- [x] Create Purchase Order from recommendation
+- [x] OdooPulse business risk dashboard
 - [ ] Multiple products and risk levels
 - [ ] AI-generated business explanations
 - [ ] Additional SME risk indicators
