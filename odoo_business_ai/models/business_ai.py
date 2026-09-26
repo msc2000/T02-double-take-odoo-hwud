@@ -36,6 +36,11 @@ class BusinessAI(models.Model):
         compute='_compute_days_until_stockout'
     )
 
+    recommended_reorder_quantity = fields.Float(
+        string='Recommended Reorder Quantity',
+        compute='_compute_recommended_reorder_quantity'
+    )
+
     stockout_risk = fields.Selection(
         [
             ('high', 'High'),
@@ -49,7 +54,22 @@ class BusinessAI(models.Model):
     recommendation = fields.Text(
           string='AI Recommendation',
           compute='_compute_recommendation'
-      )
+    )
+
+    high_risk_count = fields.Integer(
+        string='High Risk Products',
+        compute='_compute_risk_counts'
+    )
+
+    medium_risk_count = fields.Integer(
+        string='Medium Risk Products',
+        compute='_compute_risk_counts'
+    )
+
+    low_risk_count = fields.Integer(
+        string='Low Risk Products',
+        compute='_compute_risk_counts'
+    )
 
     '''FUNCTIONS FOR THE AI MODEL'''
     #to calculate the stock quantity of the selected product
@@ -121,6 +141,12 @@ class BusinessAI(models.Model):
             else:
                 record.days_until_stockout = 0
 
+    #Predict how much to reorder when stock is running out based on average daily sales
+    def _compute_recommended_reorder_quantity(self):
+        for record in self:
+            target_stock = record.average_daily_sales * 7
+            record.recommended_reorder_quantity = max(target_stock - record.stock_quantity, 0)
+    
     # Classify the stockout risk based on predicted days remaining
     def _compute_stockout_risk(self):
         for record in self:
@@ -155,3 +181,29 @@ class BusinessAI(models.Model):
                     f'{record.days_until_stockout:.1f} days. '
                     f'No immediate action required.'
                 )
+
+    def _compute_risk_counts(self):
+        analyses = self.search([])
+
+        high_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'high'
+            )
+        )
+
+        medium_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'medium'
+            )
+        )
+
+        low_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'low'
+            )
+        )
+
+        for record in self:
+            record.high_risk_count = high_count
+            record.medium_risk_count = medium_count
+            record.low_risk_count = low_count

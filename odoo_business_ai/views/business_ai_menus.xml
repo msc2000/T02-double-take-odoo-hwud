@@ -1,15 +1,32 @@
 <odoo>
 
-    <record id="business_ai_action" model="ir.actions.act_window">
+    <!-- DASHBOARD ACTION -->
+    <record id="business_ai_dashboard_action" model="ir.actions.act_window">
         <field name="name">OdooPulse</field>
+        <field name="res_model">business.ai</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="business_ai_view_dashboard"/>
+    </record>
+
+    <!-- ANALYSIS ACTION -->
+    <record id="business_ai_action" model="ir.actions.act_window">
+        <field name="name">Business Analyses</field>
         <field name="res_model">business.ai</field>
         <field name="view_mode">list,form</field>
     </record>
 
-<!-- This is to connect the OdooPulse menu to the python model business_ai.py through the business.ai module in odoo -->
+    <!-- MAIN ODOOPULSE MENU -->
     <menuitem
         id="business_ai_menu_root"
         name="OdooPulse"
+        action="business_ai_dashboard_action"
+    />
+
+    <!-- ANALYSIS SUBMENU -->
+    <menuitem
+        id="business_ai_analysis_menu"
+        name="Inventory Risk Analyses"
+        parent="business_ai_menu_root"
         action="business_ai_action"
     />
 
