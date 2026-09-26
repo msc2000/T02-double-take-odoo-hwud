@@ -119,17 +119,20 @@ The current prototype uses deterministic business logic for the prediction and r
 ## 📁 Project Structure
 
 ```text
-odoo_business_ai/
-├── __init__.py
-├── __manifest__.py
-├── models/
-│   ├── __init__.py
-│   └── business_ai.py
-├── security/
-│   └── ir.model.access.csv
-└── views/
-    ├── business_ai_views.xml
-    └── business_ai_menus.xml
+T02-double-take-odoo-hwud/
+├── .gitignore
+├── README.md
+└── odoo_business_ai/
+    ├── __init__.py
+    ├── __manifest__.py
+    ├── models/
+    │   ├── __init__.py
+    │   └── business_ai.py
+    ├── security/
+    │   └── ir.model.access.csv
+    └── views/
+        ├── business_ai_views.xml
+        └── business_ai_menus.xml
 ```
 
 ## Features
