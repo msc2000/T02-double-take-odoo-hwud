@@ -207,3 +207,54 @@ class BusinessAI(models.Model):
             record.high_risk_count = high_count
             record.medium_risk_count = medium_count
             record.low_risk_count = low_count
+
+'''Business dashboard model to display information'''
+class BusinessDashboard(models.Model):
+    _name = 'business.dashboard'
+    _description = 'OdooPulse Business Dashboard'
+
+    name = fields.Char(
+        string='Name',
+        default='OdooPulse Dashboard'
+    )
+
+    high_risk_count = fields.Integer(
+        string='High Risk Products',
+        compute='_compute_risk_counts'
+    )
+
+    medium_risk_count = fields.Integer(
+        string='Medium Risk Products',
+        compute='_compute_risk_counts'
+    )
+
+    low_risk_count = fields.Integer(
+        string='Low Risk Products',
+        compute='_compute_risk_counts'
+    )
+
+    def _compute_risk_counts(self):
+        analyses = self.env['business.ai'].search([])
+
+        high_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'high'
+            )
+        )
+
+        medium_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'medium'
+            )
+        )
+
+        low_count = len(
+            analyses.filtered(
+                lambda record: record.stockout_risk == 'low'
+            )
+        )
+
+        for record in self:
+            record.high_risk_count = high_count
+            record.medium_risk_count = medium_count
+            record.low_risk_count = low_count

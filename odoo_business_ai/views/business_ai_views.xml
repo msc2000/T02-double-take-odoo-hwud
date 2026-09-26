@@ -126,10 +126,10 @@
 
     <!-- DASHBOARD VIEW -->
     <record id="business_ai_view_dashboard" model="ir.ui.view">
-        <field name="name">business.ai.dashboard</field>
-        <field name="model">business.ai</field>
+        <field name="name">business.dashboard.form</field>
+        <field name="model">business.dashboard</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0" edit="0" delete="0">
                 <sheet>
 
                     <!-- Dashboard Header -->
@@ -184,7 +184,9 @@
                     <separator string="How OdooPulse Works"/>
 
                     <div class="alert alert-info">
-                        <strong>Business Data → Prediction → Recommendation → Action</strong>
+                        <strong>
+                            Business Data → Prediction → Recommendation → Action
+                        </strong>
                         <br/>
                         OdooPulse analyses your Odoo business data to identify
                         potential inventory risks and recommend the next action.
@@ -193,6 +195,11 @@
                 </sheet>
             </form>
         </field>
+    </record>
+
+    <!-- DEFAULT ODOOPULSE DASHBOARD RECORD -->
+    <record id="business_dashboard_default" model="business.dashboard">
+        <field name="name">OdooPulse Dashboard</field>
     </record>
 
 </odoo>

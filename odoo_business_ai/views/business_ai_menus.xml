@@ -3,9 +3,10 @@
     <!-- DASHBOARD ACTION -->
     <record id="business_ai_dashboard_action" model="ir.actions.act_window">
         <field name="name">OdooPulse</field>
-        <field name="res_model">business.ai</field>
+        <field name="res_model">business.dashboard</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="business_ai_view_dashboard"/>
+        <field name="res_id" ref="business_dashboard_default"/>
     </record>
 
     <!-- ANALYSIS ACTION -->
