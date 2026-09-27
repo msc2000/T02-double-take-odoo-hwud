@@ -271,10 +271,11 @@ class BusinessAI(models.Model):
         if not self.product_id:
             return False
 
+        
         prompt = f"""
         You are an AI business assistant for a small business.
 
-        Analyze this inventory situation and provide a short business insight.
+        Analyze the inventory situation below and provide a concise, practical business insight.
 
         Product: {self.product_id.display_name}
         Current stock: {self.stock_quantity:.0f} units
@@ -284,13 +285,20 @@ class BusinessAI(models.Model):
         Overstock risk: {self.overstock_risk}
         Recommended reorder quantity: {self.recommended_reorder_quantity:.0f} units
 
-        Give:
-        1. Start with "Situation:" followed by a brief explanation.
-        2. Start the second part with "Key action:" followed by the most important business action.
-        3. Do not use Markdown, asterisks, bullet points, or headings.
+        Provide exactly four parts:
 
-        Keep the response under 100 words.
-        """
+        Situation: Explain what is happening with the inventory and why it matters.
+
+        Key action: Give the most important action the business should take.
+
+        Delivery duration: Clearly describe the urgency of receiving the stock, such as "Immediate delivery required", "Delivery can be scheduled normally", or "Delivery is not urgent".
+
+        Business insight: Add one useful AI-generated insight based on the inventory and sales pattern. Mention a potential business impact, opportunity, or risk that may not be immediately obvious.
+
+        Use natural business language. Do not simply repeat the input values.
+        Do not invent information that is not supported by the provided data.
+        Do not use Markdown, asterisks, bullet points, or headings.
+        Keep the entire response under 80 words."""
 
         api_key = os.getenv('GROQ_API_KEY')
 
