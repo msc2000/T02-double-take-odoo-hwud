@@ -3,7 +3,7 @@
     'version': '1.0',
     'category': 'Tools',
     'summary': 'AI-powered business decision assistant for SMEs',
-    'depends': ['base', 'product'],
+    'depends': ['base', 'product', 'purchase'],
     'data': [
         'security/ir.model.access.csv',
         'views/business_ai_views.xml',

@@ -34,95 +34,105 @@
         <field name="model">business.ai</field>
         <field name="arch" type="xml">
             <form>
-                <sheet>
+            
+                <header>
+                    <button
+                        name="action_create_purchase_order"
+                        string="Create Purchase Order"
+                        type="object"
+                        class="btn-primary"
+                        invisible="not product_id or recommended_reorder_quantity &lt;= 0"/>
+                </header>
 
-                    <!-- Header -->
-                    <div class="oe_title">
-                        <h1>
-                            <field name="name"/>
-                        </h1>
-                    </div>
+                    <sheet>
 
-                    <!-- Product Selection -->
-                    <group string="Product Analysis">
-                        <field name="product_id"/>
-                    </group>
+                        <!-- Header -->
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name"/>
+                            </h1>
+                        </div>
 
-                    <!-- Key Metrics -->
-                    <separator string="Inventory Overview"/>
-
-                    <group col="4">
-
-                        <group>
-                            <div class="o_stat_info">
-                                <span class="o_stat_value">
-                                    <field name="stock_quantity"/>
-                                </span>
-                                <span class="o_stat_text">
-                                    Current Stock
-                                </span>
-                            </div>
+                        <!-- Product Selection -->
+                        <group string="Product Analysis">
+                            <field name="product_id"/>
                         </group>
 
-                        <group>
-                            <div class="o_stat_info">
-                                <span class="o_stat_value">
-                                    <field name="average_daily_sales"/>
-                                </span>
-                                <span class="o_stat_text">
-                                    Avg. Daily Sales
-                                </span>
-                            </div>
+                        <!-- Key Metrics -->
+                        <separator string="Inventory Overview"/>
+
+                        <group col="4">
+
+                            <group>
+                                <div class="o_stat_info">
+                                    <span class="o_stat_value">
+                                        <field name="stock_quantity"/>
+                                    </span>
+                                    <span class="o_stat_text">
+                                        Current Stock
+                                    </span>
+                                </div>
+                            </group>
+
+                            <group>
+                                <div class="o_stat_info">
+                                    <span class="o_stat_value">
+                                        <field name="average_daily_sales"/>
+                                    </span>
+                                    <span class="o_stat_text">
+                                        Avg. Daily Sales
+                                    </span>
+                                </div>
+                            </group>
+
+                            <group>
+                                <div class="o_stat_info">
+                                    <span class="o_stat_value">
+                                        <field name="days_until_stockout"/>
+                                    </span>
+                                    <span class="o_stat_text">
+                                        Days Until Stockout
+                                    </span>
+                                </div>
+                            </group>
+
+                            <group>
+                                <div class="o_stat_info">
+                                    <span class="o_stat_value">
+                                        <field name="recommended_reorder_quantity"/>
+                                    </span>
+                                    <span class="o_stat_text">
+                                        Recommended Reorder
+                                    </span>
+                                </div>
+                            </group>
+
                         </group>
 
-                        <group>
-                            <div class="o_stat_info">
-                                <span class="o_stat_value">
-                                    <field name="days_until_stockout"/>
-                                </span>
-                                <span class="o_stat_text">
-                                    Days Until Stockout
-                                </span>
-                            </div>
-                        </group>
+                        <!-- Risk -->
+                        <separator string="Risk Assessment"/>
 
                         <group>
-                            <div class="o_stat_info">
-                                <span class="o_stat_value">
-                                    <field name="recommended_reorder_quantity"/>
-                                </span>
-                                <span class="o_stat_text">
-                                    Recommended Reorder
-                                </span>
-                            </div>
+                            <field name="stockout_risk"
+                                widget="badge"
+                                decoration-danger="stockout_risk == 'high'"
+                                decoration-warning="stockout_risk == 'medium'"
+                                decoration-success="stockout_risk == 'low'"/>
                         </group>
 
-                    </group>
+                        <!-- Recommendation -->
+                        <separator string="OdooPulse Recommendation"/>
 
-                    <!-- Risk -->
-                    <separator string="Risk Assessment"/>
+                        <div class="alert alert-info" role="alert">
+                            <strong>AI Business Recommendation</strong>
+                            <br/>
+                            <field name="recommendation" nolabel="1"/>
+                        </div>
 
-                    <group>
-                        <field name="stockout_risk"
-                               widget="badge"
-                               decoration-danger="stockout_risk == 'high'"
-                               decoration-warning="stockout_risk == 'medium'"
-                               decoration-success="stockout_risk == 'low'"/>
-                    </group>
-
-                    <!-- Recommendation -->
-                    <separator string="OdooPulse Recommendation"/>
-
-                    <div class="alert alert-info" role="alert">
-                        <strong>AI Business Recommendation</strong>
-                        <br/>
-                        <field name="recommendation" nolabel="1"/>
-                    </div>
-
-                </sheet>
-            </form>
-        </field>
-    </record>
+                    </sheet>
+                </form>
+            </field>
+        </record>
 
     <!-- DASHBOARD VIEW -->
     <record id="business_ai_view_dashboard" model="ir.ui.view">
@@ -180,13 +190,20 @@
 
                     </group>
 
+                    <!-- Priority Actions -->
+                    <separator string="Priority Actions"/>
+
+                    <div class="alert alert-warning">
+                        <strong>What should you act on right now?</strong>
+                        <br/>
+                        <field name="priority_message" nolabel="1"/>
+                    </div>
+
                     <!-- Explanation -->
                     <separator string="How OdooPulse Works"/>
 
                     <div class="alert alert-info">
-                        <strong>
-                            Business Data → Prediction → Recommendation → Action
-                        </strong>
+                        <strong>Business Data → Prediction → Recommendation → Action</strong>
                         <br/>
                         OdooPulse analyses your Odoo business data to identify
                         potential inventory risks and recommend the next action.

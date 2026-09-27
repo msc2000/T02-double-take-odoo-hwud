@@ -182,6 +182,44 @@ class BusinessAI(models.Model):
                     f'No immediate action required.'
                 )
 
+    # Create an Odoo Purchase Order based on the recommended reorder quantity
+    def action_create_purchase_order(self):
+        self.ensure_one()
+
+        if not self.product_id:
+            return False
+
+        if self.recommended_reorder_quantity <= 0:
+            return False
+
+        # Find a vendor for the selected product
+        seller = self.product_id.seller_ids[:1]
+
+        if not seller:
+            return False
+
+        # Create the Purchase Order
+        purchase_order = self.env['purchase.order'].create({
+            'partner_id': seller.partner_id.id,
+        })
+
+        # Add the product to the Purchase Order
+        self.env['purchase.order.line'].create({
+            'order_id': purchase_order.id,
+            'product_id': self.product_id.id,
+            'product_qty': self.recommended_reorder_quantity,
+            'price_unit': seller.price,
+        })
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Purchase Order',
+            'res_model': 'purchase.order',
+            'view_mode': 'form',
+            'res_id': purchase_order.id,
+            'target': 'current',
+        }
+
     def _compute_risk_counts(self):
         analyses = self.search([])
 
@@ -233,6 +271,11 @@ class BusinessDashboard(models.Model):
         compute='_compute_risk_counts'
     )
 
+    priority_message = fields.Text(
+    string='Priority Actions',
+    compute='_compute_priority_message'
+    )
+
     def _compute_risk_counts(self):
         analyses = self.env['business.ai'].search([])
 
@@ -258,3 +301,44 @@ class BusinessDashboard(models.Model):
             record.high_risk_count = high_count
             record.medium_risk_count = medium_count
             record.low_risk_count = low_count
+
+    def _compute_priority_message(self):
+        analyses = self.env['business.ai'].search([])
+
+        analyses = analyses.filtered(
+            lambda record: record.stockout_risk in ['high', 'medium']
+        )
+
+        analyses = analyses.sorted(
+            key=lambda record: record.days_until_stockout
+        )
+
+        for record in self:
+            if not analyses:
+                record.priority_message = (
+                    'No immediate inventory actions required.'
+                )
+                continue
+
+            messages = []
+
+            for analysis in analyses[:5]:
+                product_name = analysis.product_id.display_name
+
+                if analysis.stockout_risk == 'high':
+                    action = (
+                        f'URGENT: {product_name} is expected to run out '
+                        f'in {analysis.days_until_stockout:.1f} days. '
+                        f'Reorder {analysis.recommended_reorder_quantity:.0f} units.'
+                    )
+                else:
+                    action = (
+                        f'WATCH: {product_name} is expected to run out '
+                        f'in {analysis.days_until_stockout:.1f} days. '
+                        f'Consider reordering '
+                        f'{analysis.recommended_reorder_quantity:.0f} units.'
+                    )
+
+                messages.append(action)
+
+            record.priority_message = '\n'.join(messages)
