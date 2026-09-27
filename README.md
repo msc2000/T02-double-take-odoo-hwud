@@ -150,7 +150,7 @@ T02-double-take-odoo-hwud/
 - [x] Recommended reorder quantity
 - [x] Create Purchase Order from recommendation
 - [x] OdooPulse business risk dashboard
-- [ ] Multiple products and risk levels
+- [x] Multiple products and risk levels
 - [ ] AI-generated business explanations
 - [ ] Additional SME risk indicators
 
