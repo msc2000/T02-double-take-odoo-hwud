@@ -51,9 +51,24 @@ class BusinessAI(models.Model):
         compute='_compute_stockout_risk'
     )
 
+    overstock_risk = fields.Selection(
+    [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ],
+    string='Overstock Risk',
+    compute='_compute_overstock_risk'
+    )
+
     recommendation = fields.Text(
           string='AI Recommendation',
           compute='_compute_recommendation'
+    )
+
+    risk_explanation = fields.Text(
+    string='Risk Explanation',
+    compute='_compute_risk_explanation'
     )
 
     high_risk_count = fields.Integer(
@@ -139,7 +154,7 @@ class BusinessAI(models.Model):
                     record.stock_quantity / record.average_daily_sales
                 )
             else:
-                record.days_until_stockout = 0
+                record.days_until_stockout = 999
 
     #Predict how much to reorder when stock is running out based on average daily sales
     def _compute_recommended_reorder_quantity(self):
@@ -157,6 +172,28 @@ class BusinessAI(models.Model):
             else:
                 record.stockout_risk = 'low'
 
+    def _compute_overstock_risk(self):
+        for record in self:
+            if record.average_daily_sales == 0:
+                if record.stock_quantity >= 20:
+                    record.overstock_risk = 'high'
+                elif record.stock_quantity > 0:
+                    record.overstock_risk = 'medium'
+                else:
+                    record.overstock_risk = 'low'
+
+            else:
+                days_of_stock = (
+                    record.stock_quantity / record.average_daily_sales
+                )
+
+                if days_of_stock >= 30:
+                    record.overstock_risk = 'high'
+                elif days_of_stock >= 14:
+                    record.overstock_risk = 'medium'
+                else:
+                    record.overstock_risk = 'low'
+                    
     #AI recommneds what to do next when product is nearly out of stock
     def _compute_recommendation(self):
         for record in self:
@@ -180,6 +217,31 @@ class BusinessAI(models.Model):
                     f'Estimated stock remaining: '
                     f'{record.days_until_stockout:.1f} days. '
                     f'No immediate action required.'
+                )
+
+    def _compute_risk_explanation(self):
+        for record in self:
+            if not record.product_id:
+                record.risk_explanation = 'No product selected.'
+                continue
+
+            if record.average_daily_sales > 0:
+                record.risk_explanation = (
+                    f'{record.product_id.display_name} currently has '
+                    f'{record.stock_quantity:.0f} units in stock and is selling '
+                    f'an average of {record.average_daily_sales:.1f} units per day. '
+                    f'At the current sales rate, available stock is expected to '
+                    f'last approximately {record.days_until_stockout:.1f} days. '
+                    f'OdooPulse recommends replenishing '
+                    f'{record.recommended_reorder_quantity:.0f} units to maintain '
+                    f'approximately 7 days of stock.'
+                )
+            else:
+                record.risk_explanation = (
+                    f'{record.product_id.display_name} currently has '
+                    f'{record.stock_quantity:.0f} units in stock but no confirmed '
+                    f'sales activity. OdooPulse cannot estimate a stockout based '
+                    f'on sales velocity, so no immediate replenishment is recommended.'
                 )
 
     # Create an Odoo Purchase Order based on the recommended reorder quantity

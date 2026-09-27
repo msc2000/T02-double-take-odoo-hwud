@@ -109,15 +109,19 @@
 
                         </group>
 
-                        <!-- Risk -->
                         <separator string="Risk Assessment"/>
-
                         <group>
                             <field name="stockout_risk"
                                 widget="badge"
                                 decoration-danger="stockout_risk == 'high'"
                                 decoration-warning="stockout_risk == 'medium'"
                                 decoration-success="stockout_risk == 'low'"/>
+
+                            <field name="overstock_risk"
+                                widget="badge"
+                                decoration-danger="overstock_risk == 'high'"
+                                decoration-warning="overstock_risk == 'medium'"
+                                decoration-success="overstock_risk == 'low'"/>
                         </group>
 
                         <!-- Recommendation -->
@@ -127,6 +131,12 @@
                             <strong>AI Business Recommendation</strong>
                             <br/>
                             <field name="recommendation" nolabel="1"/>
+                        </div>
+
+                        <separator string="Why OdooPulse Made This Recommendation"/>
+
+                        <div class="alert alert-secondary" role="alert">
+                            <field name="risk_explanation" nolabel="1"/>
                         </div>
 
                     </sheet>
