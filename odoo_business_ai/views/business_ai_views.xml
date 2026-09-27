@@ -162,6 +162,68 @@
             </field>
         </record>
 
+    <!-- KANBAN VIEW -->
+    <record id="business_ai_kanban_view" model="ir.ui.view">
+        <field name="name">business.ai.kanban</field>
+        <field name="model">business.ai</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="product_id"/>
+                <field name="stock_quantity"/>
+                <field name="average_daily_sales"/>
+                <field name="days_until_stockout"/>
+                <field name="stockout_risk"/>
+                <field name="recommended_reorder_quantity"/>
+
+                <templates>
+                    <t t-name="card">
+                        <div class="fw-bold fs-5">
+                            <field name="product_id"/>
+                        </div>
+
+                        <div class="mt-2">
+                            <strong>Current Stock:</strong>
+                            <field name="stock_quantity"/>
+                        </div>
+
+                        <div>
+                            <strong>Daily Sales:</strong>
+                            <field name="average_daily_sales"/>
+                        </div>
+
+                        <div>
+                            <strong>Days Until Stockout:</strong>
+                            <field name="days_until_stockout"/>
+                        </div>
+
+                        <div class="mt-2">
+                            <strong>Risk:</strong>
+
+                            <span t-if="record.stockout_risk.raw_value == 'high'"
+                                class="badge text-bg-danger ms-1">
+                                HIGH
+                            </span>
+
+                            <span t-if="record.stockout_risk.raw_value == 'medium'"
+                                class="badge text-bg-warning ms-1">
+                                MEDIUM
+                            </span>
+
+                            <span t-if="record.stockout_risk.raw_value == 'low'"
+                                class="badge text-bg-success ms-1">
+                                LOW
+                            </span>
+                        </div>
+
+                        <div>
+                            <strong>Recommended Reorder:</strong>
+                            <field name="recommended_reorder_quantity"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
     <!-- DASHBOARD VIEW -->
     <record id="business_ai_view_dashboard" model="ir.ui.view">
         <field name="name">business.dashboard.form</field>

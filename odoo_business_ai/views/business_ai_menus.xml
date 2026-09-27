@@ -13,7 +13,7 @@
     <record id="business_ai_action" model="ir.actions.act_window">
         <field name="name">Business Analyses</field>
         <field name="res_model">business.ai</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
     </record>
 
     <!-- MAIN ODOOPULSE MENU -->
