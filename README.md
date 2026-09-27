@@ -90,6 +90,9 @@ High stockout risk. Estimated stock remaining:
 * Odoo Inventory
 * Odoo Sales
 * Odoo Purchase
+* Groq API
+* python-dotenv
+* Requests
 
 ## How It Works
 
@@ -105,16 +108,25 @@ For each selected product, OdooPulse calculates:
 
 The system then generates a recommendation based on the predicted stockout risk.
 
-The current prototype uses deterministic business logic for the prediction and recommendation layer. AI-driven explanations and additional predictive capabilities are planned as the project develops.
+The current prototype uses deterministic business logic for the prediction and recommendation layer.
+
+OdooPulse also integrates generative AI using the Groq API. The calculated OdooPulse metrics are passed to the AI model, which generates a concise business insight explaining the current situation and the most important action for the business user.
 
 ## How to Run
 
 1. Install and run Odoo 19.
 2. Add the `odoo_business_ai` module to Odoo's addons path.
-3. Restart Odoo.
-4. Update the Apps list.
-5. Install **OdooPulse**.
-6. Create a Business AI analysis and select a product with inventory and sales data.
+3. Install the required Python dependencies.
+4. Create a `.env` file in the project root.
+5. Add your Groq API key to the `.env` file:
+
+   `GROQ_API_KEY=your_groq_api_key_here`
+
+6. Restart Odoo.
+7. Update the Apps list.
+8. Install **OdooPulse**.
+9. Create a Business AI analysis and select a product with inventory and sales data.
+10. Click **Generate AI Insight** to generate an AI-powered business insight.
 
 ## 📁 Project Structure
 
@@ -153,6 +165,7 @@ T02-double-take-odoo-hwud/
 - [x] Multiple products and risk levels
 - [x] Data-driven business explanations
 - [x] Additional SME risk indicators
+- [x] Generative AI business insights using Groq
 
 ## Demo Data
 

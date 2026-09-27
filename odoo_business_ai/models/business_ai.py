@@ -285,8 +285,9 @@ class BusinessAI(models.Model):
         Recommended reorder quantity: {self.recommended_reorder_quantity:.0f} units
 
         Give:
-        1. A brief explanation of the situation.
-        2. The most important business action.
+        1. Start with "Situation:" followed by a brief explanation.
+        2. Start the second part with "Key action:" followed by the most important business action.
+        3. Do not use Markdown, asterisks, bullet points, or headings.
 
         Keep the response under 100 words.
         """
