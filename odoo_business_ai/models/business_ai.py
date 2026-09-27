@@ -333,6 +333,21 @@ class BusinessDashboard(models.Model):
         compute='_compute_risk_counts'
     )
 
+    overstock_high_count = fields.Integer(
+    string='High Overstock Risk',
+    compute='_compute_overstock_count'
+    )
+
+    overstock_medium_count = fields.Integer(
+        string='Medium Overstock Risk',
+        compute='_compute_overstock_count'
+    )
+
+    overstock_message = fields.Text(
+    string='Overstock Details',
+    compute='_compute_overstock_message'    
+    )
+
     priority_message = fields.Text(
     string='Priority Actions',
     compute='_compute_priority_message'
@@ -364,6 +379,88 @@ class BusinessDashboard(models.Model):
             record.medium_risk_count = medium_count
             record.low_risk_count = low_count
 
+    def _compute_overstock_count(self):
+        analyses = self.env['business.ai'].search([])
+        high_count = len(
+            analyses.filtered(
+                lambda record: record.overstock_risk == 'high'
+            )
+        )
+        medium_count = len(
+            analyses.filtered(
+                lambda record: record.overstock_risk == 'medium'
+            )
+        )
+        for record in self:
+            record.overstock_high_count = high_count
+            record.overstock_medium_count = medium_count
+
+    def _compute_overstock_message(self):
+        analyses = self.env['business.ai'].search([])
+
+        overstock_products = analyses.filtered(
+            lambda record: record.overstock_risk in ['high', 'medium']
+        )
+
+        overstock_products = overstock_products.sorted(
+            key=lambda record: record.stock_quantity,
+            reverse=True
+        )
+
+        for record in self:
+            if not overstock_products:
+                record.overstock_message = (
+                    'No significant overstock risks detected.'
+                )
+                continue
+
+            messages = []
+
+            for analysis in overstock_products[:5]:
+                product_name = analysis.product_id.display_name
+
+                if analysis.overstock_risk == 'high':
+                    if analysis.average_daily_sales == 0:
+                        details = (
+                            f'{product_name}: '
+                            f'{analysis.stock_quantity:.0f} units in stock '
+                            f'with no confirmed sales.'
+                        )
+                    else:
+                        days_of_stock = (
+                            analysis.stock_quantity /
+                            analysis.average_daily_sales
+                        )
+
+                        details = (
+                            f'{product_name}: approximately '
+                            f'{days_of_stock:.0f} days of stock remaining.'
+                        )
+
+                    messages.append(
+                        f'HIGH: {details}'
+                    )
+
+                else:
+                    if analysis.average_daily_sales > 0:
+                        days_of_stock = (
+                            analysis.stock_quantity /
+                            analysis.average_daily_sales
+                        )
+
+                        messages.append(
+                            f'MEDIUM: {product_name} has approximately '
+                            f'{days_of_stock:.0f} days of stock remaining.'
+                        )
+                    else:
+                        messages.append(
+                            f'MEDIUM: {product_name} has '
+                            f'{analysis.stock_quantity:.0f} units in stock '
+                            f'with limited sales activity.'
+                        )
+
+            record.overstock_message = '\n'.join(messages)
+                
     def _compute_priority_message(self):
         analyses = self.env['business.ai'].search([])
 
