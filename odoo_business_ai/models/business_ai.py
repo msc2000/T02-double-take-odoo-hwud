@@ -1,13 +1,23 @@
 from odoo import models, fields
+import os
+import requests
 
+from dotenv import load_dotenv
+load_dotenv()
+
+'''Odoo concept:
+The compute='...' is a computed field, odoo uses named method to calculate values 
+rather than reading a manually entered value. (i.e., rather than the user finding answers, the functions created give answers for each field) '''
+
+#Two Odoo Models created using models.Model for this project: BusinessAI model and BusinessDashboard model
 class BusinessAI(models.Model):
     _name = 'business.ai'
     _description = 'Business AI'
 
-    name = fields.Char(string='Name', required=True)
+    name = fields.Char(string='Name', required=True)#name field creates a text field
 
     # This is to select the actual product under inventory in odoo
-    product_id = fields.Many2one(
+    product_id = fields.Many2one( #Many2one means this record points to one record from another Odoo model
         'product.product',
         string='Product'
     )
@@ -36,12 +46,14 @@ class BusinessAI(models.Model):
         compute='_compute_days_until_stockout'
     )
 
+    #calculates the number of units the business should order to bring inventory back to approx. 7 days of stock
     recommended_reorder_quantity = fields.Float(
         string='Recommended Reorder Quantity',
         compute='_compute_recommended_reorder_quantity'
     )
 
-    stockout_risk = fields.Selection(
+    #Stockout risk calculated based on these conditions: ≤ 3 days  → High | ≤ 7 days  → Medium | > 7 days  → Low
+    stockout_risk = fields.Selection( 
         [
             ('high', 'High'),
             ('medium', 'Medium'),
@@ -51,6 +63,7 @@ class BusinessAI(models.Model):
         compute='_compute_stockout_risk'
     )
 
+    #checking whether the stock we have is too much and is not selling, so its a waste of inventory
     overstock_risk = fields.Selection(
     [
         ('high', 'High'),
@@ -71,6 +84,10 @@ class BusinessAI(models.Model):
     compute='_compute_risk_explanation'
     )
 
+    ai_insight = fields.Text(
+    string='AI Business Insight'
+    )
+
     high_risk_count = fields.Integer(
         string='High Risk Products',
         compute='_compute_risk_counts'
@@ -86,24 +103,26 @@ class BusinessAI(models.Model):
         compute='_compute_risk_counts'
     )
 
-    '''FUNCTIONS FOR THE AI MODEL'''
+    '''ODOOPULSE BUSINESS LOGIC'''
     #to calculate the stock quantity of the selected product
     def _compute_stock_quantity(self):
-        for record in self:
+        for record in self: #self can represent one or many businessAI records (an odoo concept)
             if record.product_id:
                 record.stock_quantity = sum(
+                    #searching stock of a product by equating product id with selected product from records and summing up all available stock in multiple internal locations of a warehouse
                     self.env['stock.quant'].search([
                         ('product_id', '=', record.product_id.id),
                         ('location_id.usage', '=', 'internal'),
                     ]).mapped('quantity')
                 )
             else:
-                record.stock_quantity = 0
+                record.stock_quantity = 0 #if no such product with a product id exists, stock is zero
 
     # Calculate how many units of the selected product have been sold
     def _compute_units_sold(self):
         for record in self:
             if record.product_id:
+                #sale.order.line represents individual sales orders
                 sale_lines = self.env['sale.order.line'].search([
                     ('product_id', '=', record.product_id.id),
                     ('order_id.state', '=', 'sale'), #only counting confirmed sales orders, rather than draft/quotation orders
@@ -125,20 +144,21 @@ class BusinessAI(models.Model):
                 ])
 
                 if sale_lines:
-                    # Find the earliest confirmed sale
+                    # Finding dates of confirmed orders
                     sale_dates = [
                         line.order_id.date_order.date()
                         for line in sale_lines
                         if line.order_id.date_order
                     ]
 
+                    #finding earliest sale
                     earliest_date = min(sale_dates)
                     today = fields.Date.context_today(record)
 
                     # +1 means a sale made today counts as one day
                     days = max((today - earliest_date).days + 1, 1)
 
-                    record.average_daily_sales = (
+                    record.average_daily_sales = ( # this is the sales velocity
                         record.units_sold / days
                     )
                 else:
@@ -154,7 +174,7 @@ class BusinessAI(models.Model):
                     record.stock_quantity / record.average_daily_sales
                 )
             else:
-                record.days_until_stockout = 999
+                record.days_until_stockout = 999 #The placeholder value 999 is used when no sales have been made for a product so we are unable to predict when the product will be out of stock
 
     #Predict how much to reorder when stock is running out based on average daily sales
     def _compute_recommended_reorder_quantity(self):
@@ -194,7 +214,7 @@ class BusinessAI(models.Model):
                 else:
                     record.overstock_risk = 'low'
                     
-    #AI recommneds what to do next when product is nearly out of stock
+    #Python function recommends what to do next when product is nearly out of stock
     def _compute_recommendation(self):
         for record in self:
             if record.stockout_risk == 'high':
@@ -243,6 +263,82 @@ class BusinessAI(models.Model):
                     f'sales activity. OdooPulse cannot estimate a stockout based '
                     f'on sales velocity, so no immediate replenishment is recommended.'
                 )
+    
+    # Generate an AI business insight using the calculated OdooPulse metrics
+    def action_generate_ai_insight(self):
+        self.ensure_one()
+
+        if not self.product_id:
+            return False
+
+        prompt = f"""
+        You are an AI business assistant for a small business.
+
+        Analyze this inventory situation and provide a short business insight.
+
+        Product: {self.product_id.display_name}
+        Current stock: {self.stock_quantity:.0f} units
+        Average daily sales: {self.average_daily_sales:.1f} units/day
+        Days until stockout: {self.days_until_stockout:.1f} days
+        Stockout risk: {self.stockout_risk}
+        Overstock risk: {self.overstock_risk}
+        Recommended reorder quantity: {self.recommended_reorder_quantity:.0f} units
+
+        Give:
+        1. A brief explanation of the situation.
+        2. The most important business action.
+
+        Keep the response under 100 words.
+        """
+
+        api_key = os.getenv('GROQ_API_KEY')
+
+        if not api_key:
+            self.ai_insight = 'GROQ_API_KEY is not configured.'
+            return False
+
+        response = requests.post('https://api.groq.com/openai/v1/responses',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}',
+            },
+            json={
+                'model': 'openai/gpt-oss-20b',
+                'input': prompt,
+            },
+            timeout=30,
+        )
+
+        if response.status_code != 200:
+            self.ai_insight = (f'AI request failed: {response.status_code}')
+            return False
+
+        data = response.json()
+
+        output = data.get('output', [])
+
+        if output:
+            for item in output:
+                if item.get('type') == 'message':
+                    content = item.get('content', [])
+
+                    for content_item in content:
+                        if content_item.get('type') == 'output_text':
+                            self.ai_insight = content_item.get(
+                                'text',
+                                'AI returned no response.'
+                            )
+                            return {
+                                'type': 'ir.actions.client',
+                                'tag': 'reload',
+                            }
+
+        self.ai_insight = 'AI returned no response.'
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
 
     # Create an Odoo Purchase Order based on the recommended reorder quantity
     def action_create_purchase_order(self):
@@ -308,7 +404,8 @@ class BusinessAI(models.Model):
             record.medium_risk_count = medium_count
             record.low_risk_count = low_count
 
-'''Business dashboard model to display information'''
+
+'''BUSINESS DASHBOARD MODEL to display information'''
 class BusinessDashboard(models.Model):
     _name = 'business.dashboard'
     _description = 'OdooPulse Business Dashboard'
@@ -355,23 +452,14 @@ class BusinessDashboard(models.Model):
 
     def _compute_risk_counts(self):
         analyses = self.env['business.ai'].search([])
-
         high_count = len(
-            analyses.filtered(
-                lambda record: record.stockout_risk == 'high'
-            )
+            analyses.filtered(lambda record: record.stockout_risk == 'high')
         )
-
         medium_count = len(
-            analyses.filtered(
-                lambda record: record.stockout_risk == 'medium'
-            )
+            analyses.filtered(lambda record: record.stockout_risk == 'medium')
         )
-
         low_count = len(
-            analyses.filtered(
-                lambda record: record.stockout_risk == 'low'
-            )
+            analyses.filtered(lambda record: record.stockout_risk == 'low')
         )
 
         for record in self:
@@ -409,9 +497,7 @@ class BusinessDashboard(models.Model):
 
         for record in self:
             if not overstock_products:
-                record.overstock_message = (
-                    'No significant overstock risks detected.'
-                )
+                record.overstock_message = ('No significant overstock risks detected.')
                 continue
 
             messages = []
@@ -427,10 +513,7 @@ class BusinessDashboard(models.Model):
                             f'with no confirmed sales.'
                         )
                     else:
-                        days_of_stock = (
-                            analysis.stock_quantity /
-                            analysis.average_daily_sales
-                        )
+                        days_of_stock = (analysis.stock_quantity / analysis.average_daily_sales)
 
                         details = (
                             f'{product_name}: approximately '
@@ -443,10 +526,7 @@ class BusinessDashboard(models.Model):
 
                 else:
                     if analysis.average_daily_sales > 0:
-                        days_of_stock = (
-                            analysis.stock_quantity /
-                            analysis.average_daily_sales
-                        )
+                        days_of_stock = (analysis.stock_quantity / analysis.average_daily_sales)
 
                         messages.append(
                             f'MEDIUM: {product_name} has approximately '

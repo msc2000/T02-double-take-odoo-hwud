@@ -129,8 +129,6 @@
                         <separator string="OdooPulse Recommendation"/>
 
                         <div class="alert alert-info" role="alert">
-                            <strong>AI Business Recommendation</strong>
-                            <br/>
                             <field name="recommendation" nolabel="1"/>
                         </div>
 
@@ -138,6 +136,25 @@
 
                         <div class="alert alert-secondary" role="alert">
                             <field name="risk_explanation" nolabel="1"/>
+                        </div>
+
+                        <!-- AI BUSINESS INSIGHT -->
+                        <separator string="AI Business Insight"/>
+
+                        <div class="alert alert-info" role="alert">
+
+                            <field name="ai_insight"
+                                nolabel="1"
+                                readonly="1"/>
+
+                            <button
+                                name="action_generate_ai_insight"
+                                string="Generate AI Insight"
+                                type="object"
+                                class="btn-primary"
+                                invisible="not product_id"
+                            />
+
                         </div>
 
                     </sheet>
